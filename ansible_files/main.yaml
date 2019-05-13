@@ -1,0 +1,4 @@
+- import_playbook: rabbitmq/rabbitmq.yaml
+- import_playbook: redis/redis.yaml
+- import_playbook: memcache/memcache.yaml
+- import_playbook: mysql/mysql.yaml

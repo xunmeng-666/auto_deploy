@@ -1,0 +1,20 @@
+[mysqld]
+server-id=1
+log_bin=master-bin
+binlog-ignore-db=yj_manage
+binlog-ignore-db=yj_workorder
+binlog-ignore-db=yj_admin
+binlog-ignore-db=yj_vip
+binlog-ignore-db=yj_mock
+innodb_flush_log_at_trx_commit=1
+binlog_format=mixed
+slave-skip-errors = 1032,1062,126,1114,1146,1048,1396
+
+port=3306
+user=root
+character_set_server=utf8
+
+[client]
+user=root
+password=mysql123
+host=10.211.55.100

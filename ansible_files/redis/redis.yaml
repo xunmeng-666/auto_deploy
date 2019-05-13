@@ -1,0 +1,45 @@
+---
+- name: Install Redis
+  hosts: redis
+  gather_facts: True
+  tasks:
+    - name: yum install redis
+      yum:
+        name:
+          - redis
+          - redis-trib
+          - expect
+        state: latest
+
+    - name: start service
+      service:
+        name: redis
+        state: started
+        enabled: yes
+
+    - name: Open port for firewalled
+      firewalld:
+        state: enabled
+        port: 7000/tcp
+        zone: public
+        immediate: yes
+        permanent: yes
+
+    - name: copy redis_7000 conf
+      copy: src=redis_7000.conf dest=/etc/redis_7000.conf  owner=redis group=root mode=0640
+
+    - name: start redis_7000
+      shell: /bin/redis-server /etc/redis_7000.conf
+
+
+    - name: creating cluster
+      shell: |
+        spawn redis-trib create {{ node0 }}:7000 {{ node1 }}:7000 {{ node2 }}:7000
+        expect "Can I set the above configuration? (type 'yes' to accept):"
+        send "yes\n"
+        exit 0
+      args:
+        executable: expect
+      when: "{{groups['redis'] | length}} > 1"
+
+

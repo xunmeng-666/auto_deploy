@@ -1,0 +1,18 @@
+[mysqld]
+server-id=2
+relay-log-index=slave-relay-bin.index
+relay-log=slave-relay-bin
+relay_log_recovery=1
+
+port=3306
+user=root
+character_set_server=utf8
+slave_net_timeout = 5
+
+[client]
+port=3306
+socket=/var/lib/mysql/mysql.sock
+character_set_server=utf8
+user=root
+password=mysql123
+host=10.211.55.100

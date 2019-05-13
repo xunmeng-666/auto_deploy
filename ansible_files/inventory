@@ -1,0 +1,152 @@
+
+[mysql:children]
+mysql_master
+mysql_slave
+
+[mysql:vars]
+
+node0=10.211.55.100
+
+node1=10.211.55.101
+
+[mysql_master]
+
+mysql1 ansible_ssh_host=10.211.55.100 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[mysql_slave]
+
+mysql2 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[memcache:children]
+memcache_master
+memcache_slave
+
+[memcache:vars]
+
+node0=10.211.55.100
+
+node1=10.211.55.101
+
+node2=10.211.55.99
+
+[memcache_master]
+
+memcache1 ansible_ssh_host=10.211.55.100 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[memcache_slave]
+
+memcache2 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+memcache3 ansible_ssh_host=10.211.55.99 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[mq:children]
+mq_master
+mq_slave
+
+[mq:vars]
+
+node0=10.211.55.100
+
+node1=10.211.55.99
+
+node2=10.211.55.101
+
+[mq_master]
+
+mq1 ansible_ssh_host=10.211.55.100 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[mq_slave]
+
+mq3 ansible_ssh_host=10.211.55.99 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+mq2 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[redis:children]
+redis_master
+redis_slave
+
+[redis:vars]
+
+node0=10.211.55.100
+
+node1=10.211.55.99
+
+node2=10.211.55.101
+
+[redis_master]
+
+redis1 ansible_ssh_host=10.211.55.100 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[redis_slave]
+
+redis3 ansible_ssh_host=10.211.55.99 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+redis2 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[vip:children]
+vip_master
+vip_slave
+
+[vip:vars]
+
+node0=10.211.55.101
+
+node1=10.211.55.101
+
+[vip_master]
+
+vip2 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[vip_slave]
+
+vip1 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[admin:children]
+admin_master
+
+[admin:vars]
+
+node0=10.211.55.101
+
+[admin_master]
+
+admin1 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[registry:children]
+registry_master
+
+[registry:vars]
+
+node0=10.211.55.102
+
+[registry_master]
+
+registry ansible_ssh_host=10.211.55.102 ansible_ssh_port=5555 
+[cs_mock:children]
+os_mock_master
+cs_mock_slave
+
+[cs_mock:vars]
+
+node0=10.211.55.101
+
+node1=10.211.55.101
+
+[os_mock_master]
+
+os_mock1 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[cs_mock_slave]
+
+cs_mock1 ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```
+
+[msghandle:children]
+msghandle_master
+
+[msghandle:vars]
+
+node0=10.211.55.101
+
+[msghandle_master]
+
+msghandler ansible_ssh_host=10.211.55.101 ansible_ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=benet123```

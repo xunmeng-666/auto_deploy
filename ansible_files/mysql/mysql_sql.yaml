@@ -1,0 +1,17 @@
+---
+- name: Insert data to DB
+  hosts: mysql_master
+  tasks:
+    - name: inset data
+      command: mysql -uroot -pmysql123 -e "use yj_mock;INSERT INTO `os_core_project` (`id`, `created_at`, `updated_at`, `name`) VALUES ('f0416184-da80-41c6-83ba-753e5ae62ec7', '2019-03-12 06:09:13.597435', '2019-03-12 06:09:13.597524', 'admin');INSERT INTO `os_core_image`  (`id`, `created_at`, `updated_at`, `name`, `project_id`, `deleted_at`, `deleted`, `detail`, `status`, `size`, `volume_id`, `public`) VALUES ('bd063bcc-0975-486e-a8ed-538f3b29abf6', '2019-03-12 06:09:14.196979', '2019-03-12 06:09:14.197060', 'testlinux', 'f0416184-da80-41c6-83ba-753e5ae62ec7', NULL, 0, NULL, NULL, 40, NULL, 1);"
+
+- name: Create superuser
+  hosts: admin_master
+  tasks:
+    - name: Run
+      expect:
+        command: docker exec -it cloudaio-admin  bash -c 'python manage.py createsuperuser --username admin --email admin@admin.com'
+        responses:
+          (?i)Password: "admin"
+          (?i)Password (again): "admin"
+      ignore_errors: true

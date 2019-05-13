@@ -1,0 +1,22 @@
+---
+- name: Install Memcached Cluster
+  hosts: memcache
+  tasks:
+    - name: Yum install memcached
+      yum:
+        name:
+          - memcached
+          - memcached-devel
+
+    - name: Open port for firewalled
+      firewalld:
+        state: enabled
+        port: 11211/tcp
+        zone: public
+        permanent: yes
+
+    - name: start memcache service
+      service:
+        name: memcached
+        state: started
+        enabled: yes

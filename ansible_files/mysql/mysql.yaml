@@ -1,0 +1,171 @@
+---
+- name: Install mariadb
+  hosts: mysql
+  tasks:
+    - name: yum install mariadb
+      yum:
+        name:
+          - mariadb
+          - mariadb-devel
+          - mariadb-server
+          - MySQL-python
+          - python2-pip
+        update_cache: yes
+
+    - name: pip install pymysql
+      command: "pip install -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com {{ item}}"
+      with_items:
+        - pymysql
+
+    - name: Open port for firewalled
+      firewalld:
+        state: enabled
+        port: 3306/tcp
+        zone: public
+        immediate: yes
+        permanent: yes
+
+    - name: start mysql service
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: copy shell
+      copy: src=create_db_and_user.sh dest=/tmp/create_db_and_user.sh  owner=root group=root mode=0775
+
+    - name: create aplication users
+      shell: /usr/bin/sh -x /tmp/create_db_and_user.sh
+
+    - name: running mysqladmin
+      shell: |
+        spawn mysqladmin -uroot password
+        expect "*password*" {send "mysql123\r"}
+        expect "*password*" {send "mysql123\r"}
+        interact
+      args:
+        executable: expect
+
+    - name: create administrator user
+      mysql_user:
+        name: mysql_admin
+        host: '%'
+        password: 73dNpu8N9oRkE3ud8UaQ
+        priv: '*.*:ALL,GRANT'
+        config_file: /var/lib/mysql/my.cnf
+        login_user: root
+        login_password: mysql123
+        state: present
+
+    - name: delete shell
+      shell: rm -rf /root/create_db_and_user.sh
+
+
+
+- name: Set mysql master
+  hosts: mysql_master
+  gather_facts: True
+  tasks:
+    - name: copy master.cnf to my.cnf
+      copy: src=master.cnf dest=/var/lib/mysql/my.cnf owner=mysql group=mysql mode=0644 backup=yes
+
+    - name: restart mariadb service
+      service:
+        name: mariadb
+        state: restarted
+
+    - name: create sync_db user
+      mysql_user:
+        login_user: root
+        login_password: mysql123
+        config_file: /var/lib/mysql/my.cnf
+        name: rsync_sql
+        password: 3oWGtSzsuVf9oQqJeudZ
+        priv: '*.*:ALL,GRANT'
+        host: "{{ hostvars[item].ansible_ssh_host }}"
+        state: present
+      with_items: "{{ groups.mysql_slave }}"
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+    - name: create sync_db user
+      command: mysql -u root -pmysql123 -e "
+        grant SUPER, REPLICATION CLIENT ,replication slave on *.* to 'rsync_sql'@'{{ hostvars[item].ansible_ssh_host }}'identified by '3oWGtSzsuVf9oQqJeudZ';
+        grant reload on *.* to rsync_sql;
+        flush privileges;
+        flush tables with read lock;"
+      with_items: "{{ groups.mysql_slave }}"
+      when: "{{groups['mysql'] | length}} > 1"
+
+    - name: Open root acount access to the DB for slave
+      command: mysql -u root -pmysql123 -e "
+        GRANT ALL PRIVILEGES ON *.* TO 'root'@'{{ hostvars[item].ansible_ssh_host }}'IDENTIFIED BY 'mysql123' WITH GRANT OPTION;"
+      with_items: "{{ groups.mysql_slave }}"
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+    - name: Open root acount access to the DB for slave
+      command: mysql -u root -pmysql123 -e "
+        GRANT ALL PRIVILEGES ON *.* TO 'root'@'%'IDENTIFIED BY 'mysql123' WITH GRANT OPTION;"
+      with_items: "{{ groups.mysql_slave }}"
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+- name: Set mysql slave
+  hosts: mysql_slave
+  tasks:
+    - name: stop service
+      service:
+        name: mariadb
+        state: stopped
+
+    - name: backup slave my.conf
+      copy: src=slave.cnf dest=/var/lib/mysql/my.cnf owner=mysql group=mysql mode=0644 backup=yes
+
+    - name: restart mariadb service
+      service:
+        name: mariadb
+        state: restarted
+
+    - name: check master repliction status
+      mysql_replication:
+        mode: getmaster
+        config_file: '/var/lib/mysql/my.cnf'
+      delegate_to: "{{hostvars[item].ansible_ssh_host}}"
+      with_items: "{{ groups.mysql_master }}"
+      register: master
+
+    - name: debug master
+      debug: msg=" ths master is {{ master }} "
+
+    - name: set master info on slave
+      mysql_replication:
+        mode: changemaster
+        config_file: /var/lib/mysql/my.cnf
+        master_host:  "{{ node0}}"
+        master_user: rsync_sql
+        master_password: 3oWGtSzsuVf9oQqJeudZ
+        master_port: 3306
+        master_log_file: "{{ master.results[0].File }}"
+        master_log_pos: "{{ master.results[0].Position }}"
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+    - name: start slave
+      mysql_replication:
+        mode: startslave
+        config_file: /var/lib/mysql/my.cnf
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+    - name: get slave
+      mysql_replication:
+        mode: getslave
+        config_file: /var/lib/mysql/my.cnf
+      register: getslave
+      when: "{{groups['mysql'] | length}} > 1"
+
+
+    - name: display slave status
+      debug: msg="{{ getslave }}"
+      when: "{{groups['mysql'] | length}} > 1"

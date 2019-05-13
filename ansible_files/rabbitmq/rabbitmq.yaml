@@ -1,0 +1,91 @@
+---
+- name: Install rabbitmq
+  hosts: mq
+
+  tasks:
+    - name: Change hostname
+      hostname: 'name={{ ansible_hostname }}'
+
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/hosts
+        line: "{{ hostvars[item].ansible_ssh_host }} {{ hostvars[item].ansible_hostname }}"
+        state: present
+      with_items: "{{ groups.mq }}"
+
+    - name: set hostname
+      shell: /bin/echo "{{ ansible_hostname }}" > /etc/hostname
+
+
+    - name: install repo epel
+      yum:
+        name: epel-release
+
+    - name: install rabbitmq
+      yum:
+        name: rabbitmq-server
+        enablerepo: epel
+        update_cache: yes
+
+    - name: Start rabbitmq-server
+      service:
+        name: rabbitmq-server
+        state: started
+        enabled: yes
+
+    - name: Start rabbitmq manage plugins
+      command: "rabbitmq-plugins enable rabbitmq_management"
+
+    - name:
+      firewalld:
+        state: "{{ item.state }}"
+        port: "{{ item.port }}"
+        zone: public
+        immediate: yes
+        permanent: yes
+      with_items:
+        - { state: 'enabled', port: '25672/tcp' }
+        - { state: 'enabled', port: '5672/tcp' }
+        - { state: 'enabled', port: '4369/tcp' }
+        - { state: 'enabled', port: '15672/tcp' }
+
+    - name: Create user
+      shell: rabbitmqctl add_user ecscloud ecscloud
+
+    - name: Create Vhost
+      shell: rabbitmqctl add_vhost ecscloud
+
+    - name: configure the rabbitmq_user premission
+      shell: rabbitmqctl set_permissions -p "ecscloud" ecscloud ".*" ".*" ".*"
+
+    - name: Set cookie
+      service:
+        name: rabbitmq-server
+        state: stopped
+
+    - name: Set cookie
+      shell: echo "IVBJENQTOPNDDZCVNSHJ" > /var/lib/rabbitmq/.erlang.cookie
+
+    - name: Restart rabbitmq-server
+      service:
+        name: rabbitmq-server
+        state: restarted
+
+- name: Join Cluster
+  hosts: mq_slave
+  tasks:
+    - name: reset_rabbitmq
+      shell: "{{ item }}"
+      with_items:
+        - rabbitmqctl stop_app
+        - rabbitmqctl reset
+
+    - name: join_cluster
+      shell: rabbitmqctl join_cluster rabbit@{{ hostvars[item].ansible_hostname }}
+      loop: "{{ groups.mq_master }}"
+      when: "{{groups['mq_master'] | length}} > 1"
+
+    - name: restart_app
+      shell: rabbitmqctl start_app
+
+
